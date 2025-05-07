@@ -7,5 +7,7 @@
 -        --cross-compiling
 +        --cross-compiling \
 +        --without-inspector \
-+        --shared
++        --shared \
++        --with-intl=full-icu \
++        --partly-static
  fi
