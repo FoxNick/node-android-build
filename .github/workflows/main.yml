@@ -22,7 +22,7 @@ on:
       configureOptions:
         description: 'Configure options'
         required: false
-        default: '--without-inspector --shared --with-intl=full-icu --partly-static'
+        default: '--without-inspector --with-intl=full-icu --partly-static'
 
 jobs:
   build:
