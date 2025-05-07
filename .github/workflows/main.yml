@@ -6,7 +6,7 @@ on:
       nodeVersion:
         description: 'Node.js version'
         required: true
-        default: '20.19.0'
+        default: '22.15.0'
       ndkVersion:
         description: 'NDK version'
         required: true
@@ -22,7 +22,7 @@ on:
       configureOptions:
         description: 'Configure options'
         required: false
-        default: '--without-inspector --shared'
+        default: '--without-inspector --shared --with-intl=full-icu --partly-static'
 
 jobs:
   build:
@@ -70,7 +70,7 @@ jobs:
         CC_host: gcc
         CXX_host: g++
         AR_host: ar
-      run: make -j4
+      run: make -j$(getconf _NPROCESSORS_ONLN)
 
     - name: Distribute
       working-directory: node-${{ github.event.inputs.nodeVersion }}
