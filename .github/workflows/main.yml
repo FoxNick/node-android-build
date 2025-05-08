@@ -6,7 +6,7 @@ on:
       nodeVersion:
         description: 'Node.js version'
         required: true
-        default: '20.19.0'
+        default: '22.15.0'
       ndkVersion:
         description: 'NDK version'
         required: true
@@ -22,7 +22,7 @@ on:
       configureOptions:
         description: 'Configure options'
         required: false
-        default: '--without-inspector --with-intl=full-icu --shared'
+        default: '--without-inspector --partly-static --shared'
 jobs:
   build:
     name: Build
@@ -59,9 +59,7 @@ jobs:
         CC_host: gcc
         CXX_host: g++
         AR_host: ar
-        CFLAGS: "-fPIC -static-libgcc"
-        CXXFLAGS: "-fPIC -static-libstdc++"
-        LDFLAGS: "-Wl,-Bsymbolic"
+        LDFLAGS: "-Wl,--whole-archive -Wno-invalid-offsetof -O3 -fno-rtti"
       run: |
         chmod +x ./android-configure
         ./android-configure "$ANDROID_HOME/ndk/${{ github.event.inputs.ndkVersion }}" "${{ github.event.inputs.sdkPlatform }}" "${{ github.event.inputs.arch }}" ${{  github.event.inputs.configureOptions }}
@@ -72,6 +70,7 @@ jobs:
         CC_host: gcc
         CXX_host: g++
         AR_host: ar
+        LDFLAGS: "-Wl,--whole-archive -Wno-invalid-offsetof -O3 -fno-rtti"
       run: make -j4
       
     - name: Distribute
