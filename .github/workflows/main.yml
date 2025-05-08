@@ -42,14 +42,8 @@ jobs:
       working-directory: node-${{ github.event.inputs.nodeVersion }}
       run: |
         patch -p0 < ../android-configure.patch        
-        patch -p0 < ../push_registers_asm.cc.patch
-        patch -p0 < ../test_crypto_clienthello.cc.patch
-        patch -p0 < ../trap-handler.h.patch
         patch -p0 < ../zlib.patch
         cat ./android_configure.py
-        cat ./deps/v8/src/heap/base/asm/x64/push_registers_asm.cc
-        cat ./test/cctest/test_crypto_clienthello.cc
-        cat ./deps/v8/src/trap-handler/trap-handler.h
         cat ./deps/zlib/zlib.gyp
 
     - name: Cache Build Output
