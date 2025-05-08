@@ -76,11 +76,7 @@ jobs:
     - name: Build Static Library
       working-directory: node-${{ github.event.inputs.nodeVersion }}
       run: |
-        make -j$(getconf _NPROCESSORS_ONLN) V=1 \
-          LINK=$${CXX} \
-          LD=$${CXX} \
-          LDFLAGS="$${LDFLAGS} -static-libstdc++"
-
+        make -j$(getconf _NPROCESSORS_ONLN)
     - name: Collect Artifacts
       working-directory: node-${{ github.event.inputs.nodeVersion }}
       run: |
