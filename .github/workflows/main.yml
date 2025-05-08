@@ -59,7 +59,6 @@ jobs:
         CC_host: gcc
         CXX_host: g++
         AR_host: ar
-        LDFLAGS: "-Wl,--whole-archive -Wno-invalid-offsetof -O3 -fno-rtti"
       run: |
         chmod +x ./android-configure
         ./android-configure "$ANDROID_HOME/ndk/${{ github.event.inputs.ndkVersion }}" "${{ github.event.inputs.sdkPlatform }}" "${{ github.event.inputs.arch }}" ${{  github.event.inputs.configureOptions }}
@@ -70,7 +69,6 @@ jobs:
         CC_host: gcc
         CXX_host: g++
         AR_host: ar
-        LDFLAGS: "-Wl,--whole-archive -Wno-invalid-offsetof -O3 -fno-rtti"
       run: make -j4
       
     - name: Distribute
