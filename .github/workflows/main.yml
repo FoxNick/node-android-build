@@ -18,7 +18,7 @@ on:
       sdkPlatform:
         description: 'SDK platform'
         required: true
-        default: '35'
+        default: '24'
       configureOptions:
         description: 'Configure options'
         required: false
