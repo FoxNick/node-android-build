@@ -1,4 +1,4 @@
-name: Build
+name: Build Static Node.js
 
 on:
   workflow_dispatch:
@@ -22,14 +22,12 @@ on:
       configureOptions:
         description: 'Configure options'
         required: false
-        default: '--without-inspector --with-intl=full-icu --partly-static'
+        default: '--without-inspector --fully-static --with-intl=full-icu --partly-static --shared-zlib=no --shared-openssl=no'
 
 jobs:
   build:
-    name: Build
+    name: Build Static
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
 
     steps:
     - uses: actions/checkout@v4
@@ -39,20 +37,25 @@ jobs:
         curl -sOL "https://github.com/nodejs/node/archive/refs/tags/v${{ github.event.inputs.nodeVersion }}.zip"
         unzip -d . "v${{ github.event.inputs.nodeVersion }}.zip" >/dev/null
 
+    - name: Prepare ICU Source
+      run: |
+        mkdir -p node-${{ github.event.inputs.nodeVersion }}/deps/icu
+        curl -sOL https://github.com/unicode-org/icu/releases/download/release-75-1/icu4c-75_1-src.tgz
+        tar xzf icu4c-75_1-src.tgz -C node-${{ github.event.inputs.nodeVersion }}/deps/icu
+
     - name: Patch Node.js
       working-directory: node-${{ github.event.inputs.nodeVersion }}
       run: |
         patch -p0 < ../android-configure.patch
         patch -p0 < ../zlib.patch
-        cat ./android_configure.py
-        cat ./deps/zlib/zlib.gyp
 
     - name: Cache Build Output
       uses: actions/cache@v4
       with:
         path: |
           node-${{ github.event.inputs.nodeVersion }}/out/Release
-        key: build-${{ runner.os }}-${{ github.event.inputs.nodeVersion }}-${{ github.event.inputs.arch }}-${{ github.event.inputs.sdkPlatform }}-${{ github.event.inputs.ndkVersion }}
+          node-${{ github.event.inputs.nodeVersion }}/deps/openssl
+        key: static-build-${{ runner.os }}-${{ github.event.inputs.nodeVersion }}-${{ github.event.inputs.arch }}
 
     - name: Configure
       working-directory: node-${{ github.event.inputs.nodeVersion }}
@@ -60,31 +63,38 @@ jobs:
         CC_host: gcc
         CXX_host: g++
         AR_host: ar
+        CFLAGS: "-static"
+        CXXFLAGS: "-static"
+        LDFLAGS: "-static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive"
       run: |
         chmod +x ./android-configure
-        ./android-configure "$ANDROID_HOME/ndk/${{ github.event.inputs.ndkVersion }}" "${{ github.event.inputs.sdkPlatform }}" "${{ github.event.inputs.arch }}" ${{  github.event.inputs.configureOptions }}
+        ./android-configure "$ANDROID_HOME/ndk/${{ github.event.inputs.ndkVersion }}" \
+          "${{ github.event.inputs.sdkPlatform }}" \
+          "${{ github.event.inputs.arch }}" \
+          ${{ github.event.inputs.configureOptions }}
 
-    - name: Build
-      working-directory: node-${{ github.event.inputs.nodeVersion }}
-      env:
-        CC_host: gcc
-        CXX_host: g++
-        AR_host: ar
-      run: make -j$(getconf _NPROCESSORS_ONLN)
-
-    - name: Distribute
+    - name: Build Static Library
       working-directory: node-${{ github.event.inputs.nodeVersion }}
       run: |
-        mkdir -p ../build/lib
-        mkdir -p ../build/bin
-        python3 ./tools/install.py --headers-only --dest-dir ../build --prefix / install
-        [[ -f ./out/Release/libnode.so ]] && cp -rpf ./out/Release/libnode.so ../build/lib/ || echo "out/Release/libnode.so does not exist"
-        [[ -f ./out/Release/node ]] && cp -rpf ./out/Release/node ../build/bin/ || echo "out/Release/node does not exist"
+        make -j$(getconf _NPROCESSORS_ONLN) V=1 \
+          LINK=$${CXX} \
+          LD=$${CXX} \
+          LDFLAGS="$${LDFLAGS} -static-libstdc++"
+
+    - name: Collect Artifacts
+      working-directory: node-${{ github.event.inputs.nodeVersion }}
+      run: |
+        mkdir -p ../build/{lib,include}
+        find ./out/Release -name "*.a" -exec cp {} ../build/lib \;
+        cp deps/openssl/openssl/libssl.a ../build/lib/
+        cp deps/openssl/openssl/libcrypto.a ../build/lib/
+        cp deps/zlib/libz.a ../build/lib/
+        cp src/node.h ../build/include/
+        cp -r deps/uv/include ../build/
 
     - uses: actions/upload-artifact@v4
       with:
-        name: libnode
+        name: node-static-lib
         path: |
           ./build
-        if-no-files-found: ignore # 'warn' or 'ignore' are also available, defaults to `warn`
-        retention-days: 1
+        retention-days: 7
