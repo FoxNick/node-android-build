@@ -42,9 +42,15 @@ jobs:
       working-directory: node-${{ github.event.inputs.nodeVersion }}
       run: |
         patch -p0 < ../android-configure.patch
-        patch -p0 < ../zlib.patch
+        patch -p0 < ../constants-arm.h.patch
+        patch -p0 < ../push_registers_asm.cc.patch
+        patch -p0 < ../test_crypto_clienthello.cc.patch
+        patch -p0 < ../trap-handler.h.patch
         cat ./android_configure.py
-        cat ./deps/zlib/zlib.gyp
+        cat ./deps/v8/src/codegen/arm/constants-arm.h
+        cat ./deps/v8/src/heap/base/asm/x64/push_registers_asm.cc
+        cat ./test/cctest/test_crypto_clienthello.cc
+        cat ./deps/v8/src/trap-handler/trap-handler.h
 
     - name: Cache Build Output
       uses: actions/cache@v4
