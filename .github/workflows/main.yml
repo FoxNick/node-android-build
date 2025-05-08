@@ -22,7 +22,7 @@ on:
       configureOptions:
         description: 'Configure options'
         required: false
-        default: '--without-inspector --partly-static --shared'
+        default: '--without-inspector --shared'
 jobs:
   build:
     name: Build
